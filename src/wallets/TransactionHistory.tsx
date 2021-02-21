@@ -8,7 +8,7 @@ import {ReceiveTransaction} from './modals/ReceiveTransaction'
 import {SortBy, TransactionList} from './TransactionList'
 import {Trans} from '../common/Trans'
 import {asWei, Wei} from '../common/units'
-import {Account, FeeEstimates} from '../common/wallet-state'
+import {Account, FeeEstimates, SynchronizationStatus} from '../common/wallet-state'
 import {Transaction} from './history'
 
 import './TransactionHistory.scss'
@@ -20,6 +20,7 @@ export interface TransactionHistoryProps {
   estimateTransactionFee: () => Promise<FeeEstimates>
   getNextNonce: () => Promise<number>
   generateAddress: () => Promise<void>
+  syncStatus: SynchronizationStatus
 }
 
 export const TransactionHistory = ({
@@ -29,6 +30,7 @@ export const TransactionHistory = ({
   getNextNonce,
   generateAddress,
   accounts,
+  syncStatus,
 }: TransactionHistoryProps): JSX.Element => {
   const [shownTxNumber, setShownTxNumber] = useState(20)
   const [showSendModal, setShowSendModal] = useState(false)
@@ -39,13 +41,14 @@ export const TransactionHistory = ({
     direction: 'desc',
   })
 
-  const isSendDisabled = pipe(
-    availableBalance,
-    fold(
-      () => true,
-      (balance) => balance.isZero(),
-    ),
-  )
+  const isSendDisabled =
+    pipe(
+      availableBalance,
+      fold(
+        () => true,
+        (balance) => balance.isZero(),
+      ),
+    ) || syncStatus.mode !== 'synced'
 
   return (
     <div className="TransactionHistory">
