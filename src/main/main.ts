@@ -262,6 +262,7 @@ walletInit()
           newNetworkName,
           config.mantis,
           mainLog,
+          t,
         )
         const spawnedMantis = mantisProcess.spawn(additionalSettings)
         logMantis(spawnedMantis)

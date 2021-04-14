@@ -11,10 +11,12 @@ import * as option from 'fp-ts/lib/Option'
 import {pipe} from 'fp-ts/lib/pipeable'
 import * as array from 'fp-ts/lib/Array'
 import _ from 'lodash/fp'
+import {dialog} from 'electron'
 import {ElectronLog} from 'electron-log'
 import {setMantisStatus} from './status'
 import {readableToObservable} from './streamUtils'
 import {ClientSettings, MantisConfig, NetworkName} from '../config/type'
+import {TFunctionMain} from './i18n'
 
 export const isWin = os.platform() === 'win32'
 
@@ -109,6 +111,7 @@ export const MantisProcess = (spawn: typeof childProcess.spawn) => (
   networkName: NetworkName,
   processConfig: MantisConfig,
   mainLog: ElectronLog,
+  t: TFunctionMain,
 ): {spawn: (additionalConfig: ClientSettings) => SpawnedMantisProcess} => {
   const executablePath = processExecutablePath(processConfig)
   const mantisDataDir = resolve(dataDir, networkName)
@@ -136,15 +139,22 @@ export const MantisProcess = (spawn: typeof childProcess.spawn) => (
           processConfig.packageDirectory
         }): ${executablePath} ${settingsAsArguments.join(' ')}`,
       )
-      return new SpawnedMantisProcess(
-        spawn(executablePath, ['mantis', ...settingsAsArguments], {
-          cwd: processConfig.packageDirectory,
-          detached: false,
-          shell: isWin,
-          env: processEnv(processConfig),
-        }) as ChildProcess,
-        mainLog,
-      )
+
+      const process = spawn(executablePath, ['mantis', ...settingsAsArguments], {
+        cwd: processConfig.packageDirectory,
+        detached: false,
+        shell: isWin,
+        env: processEnv(processConfig),
+      })
+
+      process.on('error', (_) => {
+        dialog.showErrorBox(
+          t(['dialog', 'title', 'mantisFailedToStart']),
+          t(['dialog', 'message', 'mantisFailedToStart']),
+        )
+      })
+
+      return new SpawnedMantisProcess(process as ChildProcess, mainLog)
     },
   }
 }
