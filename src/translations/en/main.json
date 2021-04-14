@@ -9,7 +9,8 @@
       "ok": "OK",
       "saveDebugLogs": "Save Debug logs",
       "selectDirectory": "Select Directory",
-      "selectOtherLocation": "Select other location"
+      "selectOtherLocation": "Select other location",
+      "openDocs": "Open Docs"
     },
     "checkboxLabel": {
       "deleteCurrentDataDir": "Delete my current data directory instead"

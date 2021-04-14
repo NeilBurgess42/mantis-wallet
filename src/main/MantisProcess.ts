@@ -11,12 +11,14 @@ import * as option from 'fp-ts/lib/Option'
 import {pipe} from 'fp-ts/lib/pipeable'
 import * as array from 'fp-ts/lib/Array'
 import _ from 'lodash/fp'
-import {dialog} from 'electron'
+import {dialog, shell, app} from 'electron'
 import {ElectronLog} from 'electron-log'
 import {setMantisStatus} from './status'
 import {readableToObservable} from './streamUtils'
 import {ClientSettings, MantisConfig, NetworkName} from '../config/type'
 import {TFunctionMain} from './i18n'
+
+const MANTIS_DOCS_URL = 'https://docs.mantisclient.io'
 
 export const isWin = os.platform() === 'win32'
 
@@ -147,11 +149,19 @@ export const MantisProcess = (spawn: typeof childProcess.spawn) => (
         env: processEnv(processConfig),
       })
 
-      process.on('error', (_) => {
-        dialog.showErrorBox(
-          t(['dialog', 'title', 'mantisFailedToStart']),
-          t(['dialog', 'message', 'mantisFailedToStart']),
-        )
+      process.on('error', async (_) => {
+        const {response} = await dialog.showMessageBox({
+          message: t(['dialog', 'title', 'mantisFailedToStart']),
+          detail: t(['dialog', 'message', 'mantisFailedToStart']),
+          type: 'error',
+          buttons: [t(['dialog', 'button', 'cancel']), t(['dialog', 'button', 'openDocs'])],
+        })
+
+        if (response === 1) {
+          await shell.openExternal(MANTIS_DOCS_URL)
+        }
+
+        app.quit()
       })
 
       return new SpawnedMantisProcess(process as ChildProcess, mainLog)
