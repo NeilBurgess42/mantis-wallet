@@ -133,9 +133,7 @@
     line-height: 14px;
 
     &.incoming {
-      @include themify($themes) {
-        color: themed('success-color');
-      }
+      color: $primary-color;
     }
 
     .fee {
@@ -146,7 +144,7 @@
   .call-details {
     .success {
       @include themify($themes) {
-        color: themed('success-color');
+        color: $primary-color;
       }
     }
 
