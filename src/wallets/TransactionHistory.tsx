@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import {Button} from 'antd'
+import {Button, Tooltip} from 'antd'
 import InfiniteScroll from 'react-infinite-scroller'
 import {fold, getOrElse, Option} from 'fp-ts/lib/Option'
 import {pipe} from 'fp-ts/lib/function'
@@ -9,9 +9,29 @@ import {SortBy, TransactionList} from './TransactionList'
 import {Trans} from '../common/Trans'
 import {asWei, Wei} from '../common/units'
 import {Account, FeeEstimates, SynchronizationStatus} from '../common/wallet-state'
+import {useTranslation} from '../settings-state'
 import {Transaction} from './history'
 
 import './TransactionHistory.scss'
+
+const OUT_OF_SYNC_BLOCKS_THRESHOLD = 5
+
+const ConditionalTooltip = ({
+  title,
+  visible,
+  children,
+}: {
+  title: string
+  visible: boolean
+  children: JSX.Element
+}): JSX.Element =>
+  visible ? (
+    <Tooltip title={title} placement="bottom">
+      {children}
+    </Tooltip>
+  ) : (
+    children
+  )
 
 export interface TransactionHistoryProps {
   transactions: readonly Transaction[]
@@ -32,6 +52,7 @@ export const TransactionHistory = ({
   accounts,
   syncStatus,
 }: TransactionHistoryProps): JSX.Element => {
+  const {t} = useTranslation()
   const [shownTxNumber, setShownTxNumber] = useState(20)
   const [showSendModal, setShowSendModal] = useState(false)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
@@ -41,27 +62,37 @@ export const TransactionHistory = ({
     direction: 'desc',
   })
 
-  const isSendDisabled =
-    pipe(
-      availableBalance,
-      fold(
-        () => true,
-        (balance) => balance.isZero(),
-      ),
-    ) || syncStatus.mode !== 'synced'
+  const isZeroBalance = pipe(
+    availableBalance,
+    fold(
+      () => true,
+      (balance) => balance.isZero(),
+    ),
+  )
+
+  const isOutOfSync = !(
+    syncStatus.mode === 'synced' ||
+    (syncStatus.mode === 'online' &&
+      syncStatus.highestKnownBlock - syncStatus.currentBlock < OUT_OF_SYNC_BLOCKS_THRESHOLD)
+  )
 
   return (
     <div className="TransactionHistory">
       <div className="main-buttons">
-        <Button
-          data-testid="send-button"
-          type="primary"
-          className="action left-diagonal"
-          disabled={isSendDisabled}
-          onClick={(): void => setShowSendModal(true)}
-        >
-          <Trans k={['wallet', 'button', 'sendTransaction']} />
-        </Button>
+        <ConditionalTooltip visible={isOutOfSync} title={t(['wallet', 'message', 'outOfSync'])}>
+          <span>
+            <Button
+              data-testid="send-button"
+              type="primary"
+              className="action left-diagonal"
+              disabled={isZeroBalance || isOutOfSync}
+              onClick={(): void => setShowSendModal(true)}
+            >
+              <Trans k={['wallet', 'button', 'sendTransaction']} />
+            </Button>
+          </span>
+        </ConditionalTooltip>
+
         <Button
           data-testid="receive-button"
           type="default"

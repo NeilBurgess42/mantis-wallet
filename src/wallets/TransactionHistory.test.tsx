@@ -174,6 +174,11 @@ test('Send modal shows up', async () => {
 
   const {getByTestId, getAllByText, getByText, queryByText} = renderTransactionHistory({
     availableBalance: availableAmount,
+    syncStatus: {
+      mode: 'synced',
+      currentBlock: 0,
+      lastNewBlockTimestamp: 0,
+    },
   })
   const sendButton = getByTestId('send-button')
   await act(async () => userEvent.click(sendButton))
