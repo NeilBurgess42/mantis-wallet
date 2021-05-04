@@ -140,20 +140,6 @@
       display: block;
     }
   }
-
-  .call-details {
-    .success {
-      @include themify($themes) {
-        color: $primary-color;
-      }
-    }
-
-    .failure {
-      @include themify($themes) {
-        color: themed('error-text');
-      }
-    }
-  }
 }
 
 // In tooltip scope too
